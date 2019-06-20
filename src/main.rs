@@ -1,5 +1,18 @@
-mod aes;
+#![feature(test)]
 
-fn main() {
-    println!("Hello, world!");
+extern crate test;
+
+mod aes;
+mod file_ops;
+
+use std::path::Path;
+
+fn main() -> std::io::Result<()> {
+    file_ops::encrypt_file(
+        Path::new("/home/josh/aes_test/egg.wav"),
+        Path::new("/home/josh/aes_test/encrypted/egg.enc"),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    )?;
+
+    Ok(())
 }
