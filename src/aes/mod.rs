@@ -2,39 +2,42 @@ mod lookup_tables;
 pub mod key_expansion;
 
 #[inline]
-fn add_round_key(state: &mut [u8], round_key: &[u8]) {
-    for i in 0..16 {
-        state[i] ^= round_key[i];
-    }
+fn add_round_key(state: &mut [u8; 16], round_key: &[u8]) {
+    *state = [
+        state[ 0] ^ round_key[ 0], state[ 1] ^ round_key[ 1], state[ 2] ^ round_key[ 2], state[ 3] ^ round_key[ 3],
+        state[ 4] ^ round_key[ 4], state[ 5] ^ round_key[ 5], state[ 6] ^ round_key[ 6], state[ 7] ^ round_key[ 7],
+        state[ 8] ^ round_key[ 8], state[ 9] ^ round_key[ 9], state[10] ^ round_key[10], state[11] ^ round_key[11],
+        state[12] ^ round_key[12], state[13] ^ round_key[13], state[14] ^ round_key[14], state[15] ^ round_key[15]
+    ];
 }
 
 #[inline]
-fn sub_bytes(state: &mut [u8]) {
+fn sub_bytes(state: &mut [u8; 16]) {
     use lookup_tables::SBOX;
-    for i in 0..16 {
-        state[i] = SBOX[state[i] as usize];
-    }
+    
+    *state = [
+        SBOX[state[ 0] as usize], SBOX[state[ 1] as usize], SBOX[state[ 2] as usize], SBOX[state[ 3] as usize],
+        SBOX[state[ 4] as usize], SBOX[state[ 5] as usize], SBOX[state[ 6] as usize], SBOX[state[ 7] as usize],
+        SBOX[state[ 8] as usize], SBOX[state[ 9] as usize], SBOX[state[10] as usize], SBOX[state[11] as usize],
+        SBOX[state[12] as usize], SBOX[state[13] as usize], SBOX[state[14] as usize], SBOX[state[15] as usize]
+    ];
 }
 
 #[inline]
-fn shift_rows(state: &mut [u8]) {
-    let temp = [
+fn shift_rows(state: &mut [u8; 16]) {
+    *state = [
         state[ 0], state[ 5], state[10], state[15],
         state[ 4], state[ 9], state[14], state[ 3],
         state[ 8], state[13], state[ 2], state[ 7],
         state[12], state[ 1], state[ 6], state[11]
-    ];
-
-    for i in 0..16 {
-        state[i] = temp[i];
-    }
+    ]; 
 }
 
 #[inline]
-fn mix_columns(state: &mut [u8]) {
+fn mix_columns(state: &mut [u8; 16]) {
     use lookup_tables::{MUL_2, MUL_3};
 
-    let temp = [
+    *state = [
         MUL_2[state[ 0] as usize] ^ MUL_3[state[ 1] as usize] ^ state[ 2] ^ state[ 3],
         state[ 0] ^ MUL_2[state[ 1] as usize] ^ MUL_3[state[ 2] as usize] ^ state[ 3],
         state[ 0] ^ state[ 1] ^ MUL_2[state[ 2] as usize] ^ MUL_3[state[ 3] as usize],
@@ -55,14 +58,10 @@ fn mix_columns(state: &mut [u8]) {
         state[12] ^ state[13] ^ MUL_2[state[14] as usize] ^ MUL_3[state[15] as usize],
         MUL_3[state[12] as usize] ^ state[13] ^ state[14] ^ MUL_2[state[15] as usize]
     ];
-
-    for i in 0..16 {
-        state[i] = temp[i];
-    }
 }
 
 #[inline]
-pub fn encrypt(state: &mut [u8], expanded_key: &[u8; 176]) {
+pub fn encrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
     add_round_key(state, &expanded_key[..16]);
 
     for i in (16..160).step_by(16) {     // 9 * 16 =  144, + 16 since first block is key
