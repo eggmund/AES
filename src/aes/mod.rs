@@ -18,27 +18,12 @@ fn sub_bytes(state: &mut [u8]) {
 
 #[inline]
 fn shift_rows(state: &mut [u8]) {
-    let mut temp = [0u8; 16];
-
-    temp[ 0] = state[ 0];
-    temp[ 1] = state[ 5];
-    temp[ 2] = state[10];
-    temp[ 3] = state[15];
-
-    temp[ 4] = state[ 4];
-    temp[ 5] = state[ 9];
-    temp[ 6] = state[14];
-    temp[ 7] = state[ 3];
-
-    temp[ 8] = state[ 8];
-    temp[ 9] = state[13];
-    temp[10] = state[ 2];
-    temp[11] = state[ 7];
-
-    temp[12] = state[12];
-    temp[13] = state[ 1];
-    temp[14] = state[ 6];
-    temp[15] = state[11];
+    let temp = [
+        state[ 0], state[ 5], state[10], state[15],
+        state[ 4], state[ 9], state[14], state[ 3],
+        state[ 8], state[13], state[ 2], state[ 7],
+        state[12], state[ 1], state[ 6], state[11]
+    ];
 
     for i in 0..16 {
         state[i] = temp[i];
@@ -49,27 +34,27 @@ fn shift_rows(state: &mut [u8]) {
 fn mix_columns(state: &mut [u8]) {
     use lookup_tables::{MUL_2, MUL_3};
 
-    let mut temp = [0u8; 16];
+    let temp = [
+        MUL_2[state[ 0] as usize] ^ MUL_3[state[ 1] as usize] ^ state[ 2] ^ state[ 3],
+        state[ 0] ^ MUL_2[state[ 1] as usize] ^ MUL_3[state[ 2] as usize] ^ state[ 3],
+        state[ 0] ^ state[ 1] ^ MUL_2[state[ 2] as usize] ^ MUL_3[state[ 3] as usize],
+        MUL_3[state[ 0] as usize] ^ state[ 1] ^ state[ 2] ^ MUL_2[state[ 3] as usize],
 
-    temp[ 0] = MUL_2[state[ 0] as usize] ^ MUL_3[state[ 1] as usize] ^ state[ 2] ^ state[ 3];
-    temp[ 1] = state[ 0] ^ MUL_2[state[ 1] as usize] ^ MUL_3[state[ 2] as usize] ^ state[ 3];
-    temp[ 2] = state[ 0] ^ state[ 1] ^ MUL_2[state[ 2] as usize] ^ MUL_3[state[ 3] as usize];
-    temp[ 3] = MUL_3[state[ 0] as usize] ^ state[ 1] ^ state[ 2] ^ MUL_2[state[ 3] as usize];
+        MUL_2[state[ 4] as usize] ^ MUL_3[state[ 5] as usize] ^ state[ 6] ^ state[ 7],
+        state[ 4] ^ MUL_2[state[ 5] as usize] ^ MUL_3[state[ 6] as usize] ^ state[ 7],
+        state[ 4] ^ state[ 5] ^ MUL_2[state[ 6] as usize] ^ MUL_3[state[ 7] as usize],
+        MUL_3[state[ 4] as usize] ^ state[ 5] ^ state[ 6] ^ MUL_2[state[ 7] as usize],
 
-    temp[ 4] = MUL_2[state[ 4] as usize] ^ MUL_3[state[ 5] as usize] ^ state[ 6] ^ state[ 7];
-    temp[ 5] = state[ 4] ^ MUL_2[state[ 5] as usize] ^ MUL_3[state[ 6] as usize] ^ state[ 7];
-    temp[ 6] = state[ 4] ^ state[ 5] ^ MUL_2[state[ 6] as usize] ^ MUL_3[state[ 7] as usize];
-    temp[ 7] = MUL_3[state[ 4] as usize] ^ state[ 5] ^ state[ 6] ^ MUL_2[state[ 7] as usize];
+        MUL_2[state[ 8] as usize] ^ MUL_3[state[ 9] as usize] ^ state[10] ^ state[11],
+        state[ 8] ^ MUL_2[state[ 9] as usize] ^ MUL_3[state[10] as usize] ^ state[11],
+        state[ 8] ^ state[ 9] ^ MUL_2[state[10] as usize] ^ MUL_3[state[11] as usize],
+        MUL_3[state[ 8] as usize] ^ state[ 9] ^ state[10] ^ MUL_2[state[11] as usize],
 
-    temp[ 8] = MUL_2[state[ 8] as usize] ^ MUL_3[state[ 9] as usize] ^ state[10] ^ state[11];
-    temp[ 9] = state[ 8] ^ MUL_2[state[ 9] as usize] ^ MUL_3[state[10] as usize] ^ state[11];
-    temp[10] = state[ 8] ^ state[ 9] ^ MUL_2[state[10] as usize] ^ MUL_3[state[11] as usize];
-    temp[11] = MUL_3[state[ 8] as usize] ^ state[ 9] ^ state[10] ^ MUL_2[state[11] as usize];
-
-    temp[12] = MUL_2[state[12] as usize] ^ MUL_3[state[13] as usize] ^ state[14] ^ state[15];
-    temp[13] = state[12] ^ MUL_2[state[13] as usize] ^ MUL_3[state[14] as usize] ^ state[15];
-    temp[14] = state[12] ^ state[13] ^ MUL_2[state[14] as usize] ^ MUL_3[state[15] as usize];
-    temp[15] = MUL_3[state[12] as usize] ^ state[13] ^ state[14] ^ MUL_2[state[15] as usize];
+        MUL_2[state[12] as usize] ^ MUL_3[state[13] as usize] ^ state[14] ^ state[15],
+        state[12] ^ MUL_2[state[13] as usize] ^ MUL_3[state[14] as usize] ^ state[15],
+        state[12] ^ state[13] ^ MUL_2[state[14] as usize] ^ MUL_3[state[15] as usize],
+        MUL_3[state[12] as usize] ^ state[13] ^ state[14] ^ MUL_2[state[15] as usize]
+    ];
 
     for i in 0..16 {
         state[i] = temp[i];
