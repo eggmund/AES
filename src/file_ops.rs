@@ -5,7 +5,8 @@ use std::path::Path;
 
 use crate::aes::{self, key_expansion};
 
-const BUFFER_SIZE: usize = 1_048_576;
+// Multiple of 16
+const BUFFER_SIZE: usize = 16_384;
 
 pub fn encrypt_file(from: &Path, to: &Path, key: &[u8; 16]) -> std::io::Result<()> {
     let message_file = File::open(from.to_str()
@@ -13,7 +14,6 @@ pub fn encrypt_file(from: &Path, to: &Path, key: &[u8; 16]) -> std::io::Result<(
     )?;
 
     let file_size = message_file.metadata().unwrap().len() as usize;
-    println!("Got here");
     let mut buf_reader = BufReader::new(message_file);
 
     let cipher_file = File::create(to.to_str()
@@ -31,29 +31,39 @@ pub fn encrypt_file(from: &Path, to: &Path, key: &[u8; 16]) -> std::io::Result<(
     buf_writer.write(&key_enc)?;
 
     let mut bytes_done: usize = 0;
-    let mut buffer: [u8; BUFFER_SIZE] = [0u8; BUFFER_SIZE];
 
     //let mut state = [0u8; 16];
 
-    while (bytes_done as isize) < file_size as isize - BUFFER_SIZE as isize {
-        buf_reader.read(&mut buffer)?;
+    println!("File size: {}, buffer size: {}", file_size, BUFFER_SIZE);
+    while bytes_done < file_size {
+        let mut buffer_size = BUFFER_SIZE;
+        let mut padding_amount = 0;
 
-        for i in (0..BUFFER_SIZE).step_by(16) {
-            aes::encrypt(&mut buffer[bytes_done..bytes_done+16], &expanded_key);
+        if file_size - bytes_done < BUFFER_SIZE {
+            buffer_size = file_size - bytes_done;
+            padding_amount = 16 - (buffer_size % 16);
+        }
+
+        let mut buffer: Vec<u8> = vec![0u8; buffer_size];
+
+        println!("DONE: {}\tfile_size: {}\tdiff: {}", bytes_done, file_size, file_size - bytes_done);
+        buf_reader.read(buffer.as_mut_slice())?;
+
+        if padding_amount != 0 {
+            // Add padding
+            for _ in 0..padding_amount {
+                buffer.push(padding_amount as u8);
+            }
+            buffer_size += padding_amount;
+        }
+
+        for i in (0..buffer_size).step_by(16) {
+            aes::encrypt(&mut buffer[i..i+16], &expanded_key);
         }
 
         buf_writer.write(&buffer)?;
-        bytes_done += BUFFER_SIZE;
+        bytes_done += buffer_size;
     }
-
-    let padding_amount = (file_size - bytes_done) as u8;
-    buf_reader.read(&mut buffer)?;
-
-    for i in 0..padding_amount {
-        println!("i: {}", BUFFER_SIZE - padding_amount as usize + i as usize);
-        buffer[BUFFER_SIZE - padding_amount as usize + i as usize] = padding_amount;
-    }
-    buf_writer.write(&buffer)?;
 
     Ok(())
 }
