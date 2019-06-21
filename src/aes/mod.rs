@@ -24,6 +24,18 @@ fn sub_bytes(state: &mut [u8; 16]) {
 }
 
 #[inline]
+fn inv_sub_bytes(state: &mut [u8; 16]) {
+    use lookup_tables::INV_SBOX;
+
+    *state = [
+        INV_SBOX[state[ 0] as usize], INV_SBOX[state[ 1] as usize], INV_SBOX[state[ 2] as usize], INV_SBOX[state[ 3] as usize],
+        INV_SBOX[state[ 4] as usize], INV_SBOX[state[ 5] as usize], INV_SBOX[state[ 6] as usize], INV_SBOX[state[ 7] as usize],
+        INV_SBOX[state[ 8] as usize], INV_SBOX[state[ 9] as usize], INV_SBOX[state[10] as usize], INV_SBOX[state[11] as usize],
+        INV_SBOX[state[12] as usize], INV_SBOX[state[13] as usize], INV_SBOX[state[14] as usize], INV_SBOX[state[15] as usize]
+    ];
+}
+
+#[inline]
 fn shift_rows(state: &mut [u8; 16]) {
     *state = [
         state[ 0], state[ 5], state[10], state[15],
@@ -31,6 +43,16 @@ fn shift_rows(state: &mut [u8; 16]) {
         state[ 8], state[13], state[ 2], state[ 7],
         state[12], state[ 1], state[ 6], state[11]
     ]; 
+}
+
+#[inline]
+fn inv_shift_rows(state: &mut [u8; 16]) {
+    *state = [
+        state[ 0], state[13], state[10], state[ 7],
+        state[ 4], state[ 1], state[14], state[11],
+        state[ 8], state[ 5], state[ 2], state[15],
+        state[12], state[ 9], state[ 6], state[ 3]
+    ];
 }
 
 #[inline]
@@ -61,6 +83,34 @@ fn mix_columns(state: &mut [u8; 16]) {
 }
 
 #[inline]
+fn inv_mix_columns(state: &mut [u8; 16]) {
+    use lookup_tables::{MUL_9, MUL_11, MUL_13, MUL_14};
+
+    *state = [
+        MUL_14[state[ 0] as usize] ^ MUL_11[state[ 1] as usize] ^ MUL_13[state[ 2] as usize] ^ MUL_9[state[ 3] as usize],
+        MUL_9[state[ 0] as usize] ^ MUL_14[state[ 1] as usize] ^ MUL_11[state[ 2] as usize] ^ MUL_13[state[ 3] as usize],
+        MUL_13[state[ 0] as usize] ^ MUL_9[state[ 1] as usize] ^ MUL_14[state[ 2] as usize] ^ MUL_11[state[ 3] as usize],
+        MUL_11[state[ 0] as usize] ^ MUL_13[state[ 1] as usize] ^ MUL_9[state[ 2] as usize] ^ MUL_14[state[ 3] as usize],
+
+        MUL_14[state[ 4] as usize] ^ MUL_11[state[ 5] as usize] ^ MUL_13[state[ 6] as usize] ^ MUL_9[state[ 7] as usize],
+        MUL_9[state[ 4] as usize] ^ MUL_14[state[ 5] as usize] ^ MUL_11[state[ 6] as usize] ^ MUL_13[state[ 7] as usize],
+        MUL_13[state[ 4] as usize] ^ MUL_9[state[ 5] as usize] ^ MUL_14[state[ 6] as usize] ^ MUL_11[state[ 7] as usize],
+        MUL_11[state[ 4] as usize] ^ MUL_13[state[ 5] as usize] ^ MUL_9[state[ 6] as usize] ^ MUL_14[state[ 7] as usize],
+
+        MUL_14[state[ 8] as usize] ^ MUL_11[state[ 9] as usize] ^ MUL_13[state[10] as usize] ^ MUL_9[state[11] as usize],
+        MUL_9[state[ 8] as usize] ^ MUL_14[state[ 9] as usize] ^ MUL_11[state[10] as usize] ^ MUL_13[state[11] as usize],
+        MUL_13[state[ 8] as usize] ^ MUL_9[state[ 9] as usize] ^ MUL_14[state[10] as usize] ^ MUL_11[state[11] as usize],
+        MUL_11[state[ 8] as usize] ^ MUL_13[state[ 9] as usize] ^ MUL_9[state[10] as usize] ^ MUL_14[state[11] as usize],
+
+        MUL_14[state[12] as usize] ^ MUL_11[state[13] as usize] ^ MUL_13[state[14] as usize] ^ MUL_9[state[15] as usize],
+        MUL_9[state[12] as usize] ^ MUL_14[state[13] as usize] ^ MUL_11[state[14] as usize] ^ MUL_13[state[15] as usize],
+        MUL_13[state[12] as usize] ^ MUL_9[state[13] as usize] ^ MUL_14[state[14] as usize] ^ MUL_11[state[15] as usize],
+        MUL_11[state[12] as usize] ^ MUL_13[state[13] as usize] ^ MUL_9[state[14] as usize] ^ MUL_14[state[15] as usize]
+    ];
+}
+
+
+#[inline]
 pub fn encrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
     add_round_key(state, &expanded_key[..16]);
 
@@ -76,6 +126,21 @@ pub fn encrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
     add_round_key(state, &expanded_key[160..]);
 }
 
+#[inline]
+pub fn decrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
+    add_round_key(state, &expanded_key[160..]);
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+
+    for i in (16..145).rev().step_by(16) {  // 145 downwards
+        add_round_key(state, &expanded_key[i..i+16]);
+        inv_mix_columns(state);
+        inv_shift_rows(state);
+        inv_sub_bytes(state);
+    }
+
+    add_round_key(state, &expanded_key[..16]);
+}
 
 
 #[cfg(test)]
