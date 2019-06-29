@@ -27,7 +27,7 @@ pub fn encrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::i
     let mut bytes_done: usize = 0;
     let mut state = [0u8; 16];
 
-    let padding_amount = 16 - (bufs_and_size.file_size % 16);
+    let padding_amount = (16 - (bufs_and_size.file_size % 16)) % 16;
 
     while bytes_done < bufs_and_size.file_size {
         //dbg!(bytes_done, file_size - bytes_done);
@@ -70,7 +70,6 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::i
     while bytes_done < bufs_and_size.file_size - 16 {
         bufs_and_size.read_buf.read(&mut state)?;
         aes::decrypt(&mut state, &expanded_key);
-        //dbg!(state);
         bufs_and_size.write_buf.write(&state)?;
         bytes_done += 16;
     }
@@ -82,7 +81,8 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::i
     // Check for padding by checking for consecutive of the same end value
     let end_val = state[15] as usize;
     let mut end_chunk = state.to_vec();
-    if end_val <= 16 {
+    if end_val <= 16 && end_val > 0 {
+        println!("Found padding");
         if end_chunk[(16-end_val)..16].to_vec() == vec![end_val as u8; end_val] {
             end_chunk.truncate(16-end_val);
         }
@@ -117,46 +117,44 @@ fn prepare_files(read_from: &Path, write_to: &Path) -> std::io::Result<BuffersAn
     })
 }
 
+#[cfg(test)]
+mod tests {
+    use test::Bencher;
+    use std::path::Path;
 
+    #[bench]
+    fn encrypt_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/julia.png"),
+            Path::new("./test_files/encrypted/julia.enc"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());
+    }
 
-// #[cfg(test)]
-// mod tests {
-//     use test::Bencher;
-//     use std::path::Path;
+    #[bench]
+    fn encrypt_large_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/city.jpg"),
+            Path::new("./test_files/encrypted/city.enc"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());    
+    }
 
-//     #[bench]
-//     fn encrypt_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/julia.png"),
-//             Path::new("./test_files/encrypted/julia.enc"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());
-//     }
+    #[bench]
+    fn decrypt_file(b: &mut Bencher) {
+        b.iter(|| super::decrypt_file(
+            Path::new("./test_files/encrypted/julia.enc"),
+            Path::new("./test_files/decrypted/julia.png"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());
+    }
 
-//     #[bench]
-//     fn encrypt_large_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/city.jpg"),
-//             Path::new("./test_files/encrypted/city.enc"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());    
-//     }
-
-//     #[bench]
-//     fn decrypt_file(b: &mut Bencher) {
-//         b.iter(|| super::decrypt_file(
-//             Path::new("./test_files/encrypted/julia.enc"),
-//             Path::new("./test_files/decrypted/julia.png"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());
-//     }
-
-//     #[bench]
-//     fn decrypt_large_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/encrypted/city.enc"),
-//             Path::new("./test_files/decrypted/city.jpg"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());    
-//     }
-// }
+    #[bench]
+    fn decrypt_large_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/encrypted/city.enc"),
+            Path::new("./test_files/decrypted/city.jpg"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());    
+    }
+}
