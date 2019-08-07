@@ -1,5 +1,4 @@
-// #![feature(test)]
-// extern crate test;
+//#![feature(test)]
 
 mod aes;
 mod file_ops;
@@ -30,6 +29,7 @@ fn main() -> std::io::Result<()> {
     }
 }
 
+#[inline]
 fn parse_key_string(inp: String) -> [u8; 16] {
     let mut inp = inp.into_bytes();
     inp.resize(16, 0u8);

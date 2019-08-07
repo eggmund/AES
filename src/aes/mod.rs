@@ -143,8 +143,10 @@ pub fn decrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     //use test::Bencher;
 
+    // Expanded sequence of 1 to 16
     const EXPANDED_KEY: [u8; 176] = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
         171, 116, 201, 211, 174, 114, 206, 219, 167, 120, 197,
@@ -169,25 +171,25 @@ mod tests {
     // #[bench]
     // fn encrypt(b: &mut Bencher) {
     //     // String = 'cheeseburger3456'
-    //     b.iter(|| super::encrypt(&mut TEST_ARR, &EXPANDED_KEY));
+    //     b.iter(|| encrypt(&mut TEST_ARR, &EXPANDED_KEY));
     // }
 
     // #[bench]
     // fn decrypt(b: &mut Bencher) {
-    //     b.iter(|| super::decrypt(&mut TEST_ARR, &EXPANDED_KEY));
+    //     b.iter(|| decrypt(&mut TEST_ARR, &EXPANDED_KEY));
     // }
 
     #[test]
     fn encrypt_test() {
         let mut arr = TEST_ARR;
-        super::encrypt(&mut arr, &EXPANDED_KEY);
+        encrypt(&mut arr, &EXPANDED_KEY);
         assert_eq!(arr, ENCRYPTED_TEST_ARR);
     }
 
     #[test]
     fn decrypt_test() {
         let mut arr = ENCRYPTED_TEST_ARR;
-        super::decrypt(&mut arr, &EXPANDED_KEY);
+        decrypt(&mut arr, &EXPANDED_KEY);
         assert_eq!(arr, TEST_ARR);
     }
 }
