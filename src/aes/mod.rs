@@ -143,7 +143,7 @@ pub fn decrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
 
 #[cfg(test)]
 mod tests {
-    use test::Bencher;
+    //use test::Bencher;
 
     const EXPANDED_KEY: [u8; 176] = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
@@ -162,16 +162,32 @@ mod tests {
         115, 161, 129, 98, 101, 177, 177, 64, 135
     ];
 
-    #[bench]
-    fn encrypt(b: &mut Bencher) {
-        b.iter(|| super::encrypt(&mut [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], &EXPANDED_KEY));
+    const TEST_ARR: [u8; 16] = [99, 104, 101, 101, 115, 101, 98, 117, 114, 103, 101, 114, 51, 52, 53, 54];
+    // Encrypted using http://aes.online-domain-tools.com/
+    const ENCRYPTED_TEST_ARR: [u8; 16] = [0x61, 0x18, 0x80, 0xba, 0x0a, 0xd5, 0xfc, 0x55, 0x81, 0xc9, 0xd9, 0x3a, 0xdf, 0x76, 0x35, 0x7c];
+
+    // #[bench]
+    // fn encrypt(b: &mut Bencher) {
+    //     // String = 'cheeseburger3456'
+    //     b.iter(|| super::encrypt(&mut TEST_ARR, &EXPANDED_KEY));
+    // }
+
+    // #[bench]
+    // fn decrypt(b: &mut Bencher) {
+    //     b.iter(|| super::decrypt(&mut TEST_ARR, &EXPANDED_KEY));
+    // }
+
+    #[test]
+    fn encrypt_test() {
+        let mut arr = TEST_ARR;
+        super::encrypt(&mut arr, &EXPANDED_KEY);
+        assert_eq!(arr, ENCRYPTED_TEST_ARR);
     }
 
-    #[bench]
-    fn decrypt(b: &mut Bencher) {
-        b.iter(|| super::decrypt(
-            &mut [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-            &EXPANDED_KEY
-        ));
+    #[test]
+    fn decrypt_test() {
+        let mut arr = ENCRYPTED_TEST_ARR;
+        super::decrypt(&mut arr, &EXPANDED_KEY);
+        assert_eq!(arr, TEST_ARR);
     }
 }

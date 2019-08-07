@@ -3,22 +3,41 @@
 
 mod aes;
 mod file_ops;
+mod options;
+
+use structopt::StructOpt;
 
 use std::path::Path;
 
+use crate::options::Opt;
+
 fn main() -> std::io::Result<()> {
-    // let f = Path::new("./test_files/void.iso");
-    // let w = Path::new("./test_files/encrypted/void.enc");
-    // let d = Path::new("./test_files/decrypted/void.iso");
+    let opts = Opt::from_args();
 
-    let f = Path::new("./test_files/void.iso");
-    let w = Path::new("./test_files/encrypted/void.enc");
-    let d = Path::new("./test_files/decrypted/void.iso");
+    match opts {
+        Opt::Encrypt {
+            shared_opts,
+        } => {
+            let key = parse_key_string(shared_opts.key);
+            file_ops::encrypt_file(&shared_opts.file_path, &shared_opts.output_path, &key)
+        },
+        Opt::Decrypt {
+            shared_opts,
+        } => {
+            let key = parse_key_string(shared_opts.key);
+            file_ops::decrypt_file(&shared_opts.file_path, &shared_opts.output_path, &key)
+        },
+    }
+}
 
-    let key = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+fn parse_key_string(inp: String) -> [u8; 16] {
+    let mut inp = inp.into_bytes();
+    inp.resize(16, 0u8);
 
-    file_ops::encrypt_file(f, w, &key)?;
-    file_ops::decrypt_file(w, d, &key)?;
-
-    Ok(())
+    [
+        inp[ 0], inp[ 1], inp[ 2], inp[ 3],
+        inp[ 4], inp[ 5], inp[ 6], inp[ 7],
+        inp[ 8], inp[ 9], inp[10], inp[11],
+        inp[12], inp[13], inp[14], inp[15]
+    ]
 }

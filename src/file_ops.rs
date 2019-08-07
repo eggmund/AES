@@ -8,12 +8,32 @@ use crate::aes::{self, key_expansion};
 // 1 Mebibyte
 const BUFFER_SIZE: usize = 1_048_576;
 
+// mod multithreaded {
+//     use std::thread;
+//     use std::sync::{Arc, mpsc};
+//     use super::BUFFER_SIZE;
+
+//     pub struct ThreadPool {
+//         workers: Vec<thread::JoinHandle<()>>,
+//     }
+
+//     // enum Job {
+//     //     Encrypt {
+//     //         expanded_key: Option<[u8; 176]>,
+//     //         data: []
+//     //     },
+//     //     Decrypt {
+
+//     //     }
+//     // }
+// }
+
 /*  Padding is added at the end of the file so it can be split into 16 byte chunks.
     For example, if 4 more bytes are needed for padding, then four "4"s are added to the end.
     e.g [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ,12] -> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 4, 4, 4, 4]
     Then when decrypting, four "4"s are found in a row in the last block, so are removed.
 */
-pub fn encrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::io::Result<()> {
+pub fn encrypt_file<P: AsRef<Path>>(read_from: P, write_to: P, key: &[u8; 16]) -> std::io::Result<()> {
     let mut bufs_and_size = prepare_files(read_from, write_to)?;
 
     // Expand the key
@@ -82,7 +102,6 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::i
     let end_val = state[15] as usize;
     let mut end_chunk = state.to_vec();
     if end_val <= 16 && end_val > 0 {
-        println!("Found padding");
         if end_chunk[(16-end_val)..16].to_vec() == vec![end_val as u8; end_val] {
             end_chunk.truncate(16-end_val);
         }
@@ -94,21 +113,18 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> std::i
     Ok(())
 }
 
+
 struct BuffersAndSize {
     write_buf: BufWriter<File>,
     read_buf: BufReader<File>,
     file_size: usize,
 }
 
-fn prepare_files(read_from: &Path, write_to: &Path) -> std::io::Result<BuffersAndSize> {
-    let read_file = File::open(read_from.to_str()
-        .unwrap_or_else(move || panic!("File to encrypt could not be opened."))
-    )?;
+fn prepare_files<P: AsRef<Path>>(read_from: P, write_to: P) -> std::io::Result<BuffersAndSize> {
+    let read_file = File::open(read_from)?;
     let size = read_file.metadata().unwrap().len() as usize;
 
-    let write_file = File::create(write_to.to_str()
-        .unwrap_or_else(move || panic!("File to encrypt to could not be opened."))
-    )?;
+    let write_file = File::create(write_to)?;
 
     Ok(BuffersAndSize {
         write_buf: BufWriter::with_capacity(BUFFER_SIZE, write_file),
@@ -117,44 +133,45 @@ fn prepare_files(read_from: &Path, write_to: &Path) -> std::io::Result<BuffersAn
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use test::Bencher;
-    use std::path::Path;
 
-    #[bench]
-    fn encrypt_file(b: &mut Bencher) {
-        b.iter(|| super::encrypt_file(
-            Path::new("./test_files/julia.png"),
-            Path::new("./test_files/encrypted/julia.enc"),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        ).unwrap());
-    }
+// #[cfg(test)]
+// mod tests {
+//     use test::Bencher;
+//     use std::path::Path;
 
-    #[bench]
-    fn encrypt_large_file(b: &mut Bencher) {
-        b.iter(|| super::encrypt_file(
-            Path::new("./test_files/city.jpg"),
-            Path::new("./test_files/encrypted/city.enc"),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        ).unwrap());    
-    }
+//     #[bench]
+//     fn encrypt_file(b: &mut Bencher) {
+//         b.iter(|| super::encrypt_file(
+//             Path::new("./test_files/julia.png"),
+//             Path::new("./test_files/encrypted/julia.enc"),
+//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+//         ).unwrap());
+//     }
 
-    #[bench]
-    fn decrypt_file(b: &mut Bencher) {
-        b.iter(|| super::decrypt_file(
-            Path::new("./test_files/encrypted/julia.enc"),
-            Path::new("./test_files/decrypted/julia.png"),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        ).unwrap());
-    }
+//     #[bench]
+//     fn encrypt_large_file(b: &mut Bencher) {
+//         b.iter(|| super::encrypt_file(
+//             Path::new("./test_files/city.jpg"),
+//             Path::new("./test_files/encrypted/city.enc"),
+//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+//         ).unwrap());    
+//     }
 
-    #[bench]
-    fn decrypt_large_file(b: &mut Bencher) {
-        b.iter(|| super::encrypt_file(
-            Path::new("./test_files/encrypted/city.enc"),
-            Path::new("./test_files/decrypted/city.jpg"),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        ).unwrap());    
-    }
-}
+//     #[bench]
+//     fn decrypt_file(b: &mut Bencher) {
+//         b.iter(|| super::decrypt_file(
+//             Path::new("./test_files/encrypted/julia.enc"),
+//             Path::new("./test_files/decrypted/julia.png"),
+//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+//         ).unwrap());
+//     }
+
+//     #[bench]
+//     fn decrypt_large_file(b: &mut Bencher) {
+//         b.iter(|| super::encrypt_file(
+//             Path::new("./test_files/encrypted/city.enc"),
+//             Path::new("./test_files/decrypted/city.jpg"),
+//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+//         ).unwrap());    
+//     }
+// }
