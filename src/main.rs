@@ -18,6 +18,7 @@ fn main() -> std::io::Result<()> {
             shared_opts,
         } => {
             let key = parse_key_string(shared_opts.key);
+            //file_ops::encrypt_file(&shared_opts.file_path, &shared_opts.output_path, &key)
             file_ops::encrypt_file(&shared_opts.file_path, &shared_opts.output_path, &key)
         },
         Opt::Decrypt {

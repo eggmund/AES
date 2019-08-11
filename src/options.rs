@@ -14,7 +14,7 @@ pub struct SharedOptions {
 
     /// Key to use. If key is longer than 16 characters, only the first 16 characters will be used.
     /// If the key is less than 16 characters, it will be padded with 0s.
-    #[structopt(name = "key", short = "k", long = "key")]
+    #[structopt(name = "key", short = "k")]
     pub key: String,
 }
 
