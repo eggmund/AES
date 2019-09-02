@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 structopt = "0.2.18"
+base64 = "0.10.1"

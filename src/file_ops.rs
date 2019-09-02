@@ -155,7 +155,6 @@ pub fn encrypt_file<P: AsRef<Path>>(read_from: P, write_to: P, key: &[u8; 16]) -
 }
 
 pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> io::Result<()> {
-    println!("Decrypting.");
     let mut bufs_and_size = prepare_files(read_from, write_to)?;
 
     // Expand the key
@@ -219,44 +218,44 @@ fn prepare_files<P: AsRef<Path>>(read_from: P, write_to: P) -> io::Result<Buffer
 }
 
 
-// #[cfg(test)]
-// mod tests {
-//     use test::Bencher;
-//     use std::path::Path;
+#[cfg(test)]
+mod tests {
+    use test::Bencher;
+    use std::path::Path;
 
-//     #[bench]
-//     fn encrypt_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/julia.png"),
-//             Path::new("./test_files/encrypted/julia.enc"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());
-//     }
+    #[bench]
+    fn encrypt_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/julia.png"),
+            Path::new("./test_files/encrypted/julia.enc"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());
+    }
 
-//     #[bench]
-//     fn encrypt_large_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/city.jpg"),
-//             Path::new("./test_files/encrypted/city.enc"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());    
-//     }
+    #[bench]
+    fn encrypt_large_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/city.jpg"),
+            Path::new("./test_files/encrypted/city.enc"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());    
+    }
 
-//     #[bench]
-//     fn decrypt_file(b: &mut Bencher) {
-//         b.iter(|| super::decrypt_file(
-//             Path::new("./test_files/encrypted/julia.enc"),
-//             Path::new("./test_files/decrypted/julia.png"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());
-//     }
+    #[bench]
+    fn decrypt_file(b: &mut Bencher) {
+        b.iter(|| super::decrypt_file(
+            Path::new("./test_files/encrypted/julia.enc"),
+            Path::new("./test_files/decrypted/julia.png"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());
+    }
 
-//     #[bench]
-//     fn decrypt_large_file(b: &mut Bencher) {
-//         b.iter(|| super::encrypt_file(
-//             Path::new("./test_files/encrypted/city.enc"),
-//             Path::new("./test_files/decrypted/city.jpg"),
-//             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-//         ).unwrap());    
-//     }
-// }
+    #[bench]
+    fn decrypt_large_file(b: &mut Bencher) {
+        b.iter(|| super::encrypt_file(
+            Path::new("./test_files/encrypted/city.enc"),
+            Path::new("./test_files/decrypted/city.jpg"),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        ).unwrap());    
+    }
+}

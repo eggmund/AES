@@ -1,143 +1,133 @@
 mod lookup_tables;
 pub mod key_expansion;
 
-#[inline(always)]
-fn add_round_key(state: &mut [u8; 16], round_key: &[u8]) {
-    *state = [
-        state[ 0] ^ round_key[ 0], state[ 1] ^ round_key[ 1], state[ 2] ^ round_key[ 2], state[ 3] ^ round_key[ 3],
-        state[ 4] ^ round_key[ 4], state[ 5] ^ round_key[ 5], state[ 6] ^ round_key[ 6], state[ 7] ^ round_key[ 7],
-        state[ 8] ^ round_key[ 8], state[ 9] ^ round_key[ 9], state[10] ^ round_key[10], state[11] ^ round_key[11],
-        state[12] ^ round_key[12], state[13] ^ round_key[13], state[14] ^ round_key[14], state[15] ^ round_key[15]
+macro_rules! add_round_key {($state:expr, $round_key:expr) => {
+    *$state = [
+        $state[ 0] ^ $round_key[ 0], $state[ 1] ^ $round_key[ 1], $state[ 2] ^ $round_key[ 2], $state[ 3] ^ $round_key[ 3],
+        $state[ 4] ^ $round_key[ 4], $state[ 5] ^ $round_key[ 5], $state[ 6] ^ $round_key[ 6], $state[ 7] ^ $round_key[ 7],
+        $state[ 8] ^ $round_key[ 8], $state[ 9] ^ $round_key[ 9], $state[10] ^ $round_key[10], $state[11] ^ $round_key[11],
+        $state[12] ^ $round_key[12], $state[13] ^ $round_key[13], $state[14] ^ $round_key[14], $state[15] ^ $round_key[15]
     ];
-}
+};}
 
-#[inline(always)]
-fn sub_bytes(state: &mut [u8; 16]) {
+macro_rules! sub_bytes {($state:expr) => {
     use lookup_tables::SBOX;
-    
-    *state = [
-        SBOX[state[ 0] as usize], SBOX[state[ 1] as usize], SBOX[state[ 2] as usize], SBOX[state[ 3] as usize],
-        SBOX[state[ 4] as usize], SBOX[state[ 5] as usize], SBOX[state[ 6] as usize], SBOX[state[ 7] as usize],
-        SBOX[state[ 8] as usize], SBOX[state[ 9] as usize], SBOX[state[10] as usize], SBOX[state[11] as usize],
-        SBOX[state[12] as usize], SBOX[state[13] as usize], SBOX[state[14] as usize], SBOX[state[15] as usize]
+    *$state = [
+        SBOX[$state[ 0] as usize], SBOX[$state[ 1] as usize], SBOX[$state[ 2] as usize], SBOX[$state[ 3] as usize],
+        SBOX[$state[ 4] as usize], SBOX[$state[ 5] as usize], SBOX[$state[ 6] as usize], SBOX[$state[ 7] as usize],
+        SBOX[$state[ 8] as usize], SBOX[$state[ 9] as usize], SBOX[$state[10] as usize], SBOX[$state[11] as usize],
+        SBOX[$state[12] as usize], SBOX[$state[13] as usize], SBOX[$state[14] as usize], SBOX[$state[15] as usize]
     ];
-}
+};}
 
-#[inline(always)]
-fn inv_sub_bytes(state: &mut [u8; 16]) {
+macro_rules! inv_sub_bytes {($state:expr) => {
     use lookup_tables::INV_SBOX;
-    *state = [
-        INV_SBOX[state[ 0] as usize], INV_SBOX[state[ 1] as usize], INV_SBOX[state[ 2] as usize], INV_SBOX[state[ 3] as usize],
-        INV_SBOX[state[ 4] as usize], INV_SBOX[state[ 5] as usize], INV_SBOX[state[ 6] as usize], INV_SBOX[state[ 7] as usize],
-        INV_SBOX[state[ 8] as usize], INV_SBOX[state[ 9] as usize], INV_SBOX[state[10] as usize], INV_SBOX[state[11] as usize],
-        INV_SBOX[state[12] as usize], INV_SBOX[state[13] as usize], INV_SBOX[state[14] as usize], INV_SBOX[state[15] as usize]
+    *$state = [
+        INV_SBOX[$state[ 0] as usize], INV_SBOX[$state[ 1] as usize], INV_SBOX[$state[ 2] as usize], INV_SBOX[$state[ 3] as usize],
+        INV_SBOX[$state[ 4] as usize], INV_SBOX[$state[ 5] as usize], INV_SBOX[$state[ 6] as usize], INV_SBOX[$state[ 7] as usize],
+        INV_SBOX[$state[ 8] as usize], INV_SBOX[$state[ 9] as usize], INV_SBOX[$state[10] as usize], INV_SBOX[$state[11] as usize],
+        INV_SBOX[$state[12] as usize], INV_SBOX[$state[13] as usize], INV_SBOX[$state[14] as usize], INV_SBOX[$state[15] as usize]
     ];
-}
+};}
 
-#[inline(always)]
-fn shift_rows(state: &mut [u8; 16]) {
-    *state = [
-        state[ 0], state[ 5], state[10], state[15],
-        state[ 4], state[ 9], state[14], state[ 3],
-        state[ 8], state[13], state[ 2], state[ 7],
-        state[12], state[ 1], state[ 6], state[11]
-    ]; 
-}
-
-#[inline(always)]
-fn inv_shift_rows(state: &mut [u8; 16]) {
-    *state = [
-        state[ 0], state[13], state[10], state[ 7],
-        state[ 4], state[ 1], state[14], state[11],
-        state[ 8], state[ 5], state[ 2], state[15],
-        state[12], state[ 9], state[ 6], state[ 3]
+macro_rules! shift_rows {($state:expr) => {
+    *$state = [
+        $state[ 0], $state[ 5], $state[10], $state[15],
+        $state[ 4], $state[ 9], $state[14], $state[ 3],
+        $state[ 8], $state[13], $state[ 2], $state[ 7],
+        $state[12], $state[ 1], $state[ 6], $state[11]
     ];
-}
+};}
 
-#[inline(always)]
-fn mix_columns(state: &mut [u8; 16]) {
+macro_rules! inv_shift_rows {($state:expr) => {
+    *$state = [
+        $state[ 0], $state[13], $state[10], $state[ 7],
+        $state[ 4], $state[ 1], $state[14], $state[11],
+        $state[ 8], $state[ 5], $state[ 2], $state[15],
+        $state[12], $state[ 9], $state[ 6], $state[ 3]
+    ];
+};}
+
+macro_rules! mix_columns {($state:expr) => {
     use lookup_tables::{MUL_2, MUL_3};
+    *$state = [
+        MUL_2[$state[ 0] as usize] ^ MUL_3[$state[ 1] as usize] ^ $state[ 2] ^ $state[ 3],
+        $state[ 0] ^ MUL_2[$state[ 1] as usize] ^ MUL_3[$state[ 2] as usize] ^ $state[ 3],
+        $state[ 0] ^ $state[ 1] ^ MUL_2[$state[ 2] as usize] ^ MUL_3[$state[ 3] as usize],
+        MUL_3[$state[ 0] as usize] ^ $state[ 1] ^ $state[ 2] ^ MUL_2[$state[ 3] as usize],
 
-    *state = [
-        MUL_2[state[ 0] as usize] ^ MUL_3[state[ 1] as usize] ^ state[ 2] ^ state[ 3],
-        state[ 0] ^ MUL_2[state[ 1] as usize] ^ MUL_3[state[ 2] as usize] ^ state[ 3],
-        state[ 0] ^ state[ 1] ^ MUL_2[state[ 2] as usize] ^ MUL_3[state[ 3] as usize],
-        MUL_3[state[ 0] as usize] ^ state[ 1] ^ state[ 2] ^ MUL_2[state[ 3] as usize],
+        MUL_2[$state[ 4] as usize] ^ MUL_3[$state[ 5] as usize] ^ $state[ 6] ^ $state[ 7],
+        $state[ 4] ^ MUL_2[$state[ 5] as usize] ^ MUL_3[$state[ 6] as usize] ^ $state[ 7],
+        $state[ 4] ^ $state[ 5] ^ MUL_2[$state[ 6] as usize] ^ MUL_3[$state[ 7] as usize],
+        MUL_3[$state[ 4] as usize] ^ $state[ 5] ^ $state[ 6] ^ MUL_2[$state[ 7] as usize],
 
-        MUL_2[state[ 4] as usize] ^ MUL_3[state[ 5] as usize] ^ state[ 6] ^ state[ 7],
-        state[ 4] ^ MUL_2[state[ 5] as usize] ^ MUL_3[state[ 6] as usize] ^ state[ 7],
-        state[ 4] ^ state[ 5] ^ MUL_2[state[ 6] as usize] ^ MUL_3[state[ 7] as usize],
-        MUL_3[state[ 4] as usize] ^ state[ 5] ^ state[ 6] ^ MUL_2[state[ 7] as usize],
+        MUL_2[$state[ 8] as usize] ^ MUL_3[$state[ 9] as usize] ^ $state[10] ^ $state[11],
+        $state[ 8] ^ MUL_2[$state[ 9] as usize] ^ MUL_3[$state[10] as usize] ^ $state[11],
+        $state[ 8] ^ $state[ 9] ^ MUL_2[$state[10] as usize] ^ MUL_3[$state[11] as usize],
+        MUL_3[$state[ 8] as usize] ^ $state[ 9] ^ $state[10] ^ MUL_2[$state[11] as usize],
 
-        MUL_2[state[ 8] as usize] ^ MUL_3[state[ 9] as usize] ^ state[10] ^ state[11],
-        state[ 8] ^ MUL_2[state[ 9] as usize] ^ MUL_3[state[10] as usize] ^ state[11],
-        state[ 8] ^ state[ 9] ^ MUL_2[state[10] as usize] ^ MUL_3[state[11] as usize],
-        MUL_3[state[ 8] as usize] ^ state[ 9] ^ state[10] ^ MUL_2[state[11] as usize],
-
-        MUL_2[state[12] as usize] ^ MUL_3[state[13] as usize] ^ state[14] ^ state[15],
-        state[12] ^ MUL_2[state[13] as usize] ^ MUL_3[state[14] as usize] ^ state[15],
-        state[12] ^ state[13] ^ MUL_2[state[14] as usize] ^ MUL_3[state[15] as usize],
-        MUL_3[state[12] as usize] ^ state[13] ^ state[14] ^ MUL_2[state[15] as usize]
+        MUL_2[$state[12] as usize] ^ MUL_3[$state[13] as usize] ^ $state[14] ^ $state[15],
+        $state[12] ^ MUL_2[$state[13] as usize] ^ MUL_3[$state[14] as usize] ^ $state[15],
+        $state[12] ^ $state[13] ^ MUL_2[$state[14] as usize] ^ MUL_3[$state[15] as usize],
+        MUL_3[$state[12] as usize] ^ $state[13] ^ $state[14] ^ MUL_2[$state[15] as usize]
     ];
-}
+};}
 
-#[inline(always)]
-fn inv_mix_columns(state: &mut [u8; 16]) {
+macro_rules! inv_mix_columns {($state:expr) => {
     use lookup_tables::{MUL_9, MUL_11, MUL_13, MUL_14};
+    *$state = [
+        MUL_14[$state[ 0] as usize] ^ MUL_11[$state[ 1] as usize] ^ MUL_13[$state[ 2] as usize] ^ MUL_9[$state[ 3] as usize],
+        MUL_9[$state[ 0] as usize] ^ MUL_14[$state[ 1] as usize] ^ MUL_11[$state[ 2] as usize] ^ MUL_13[$state[ 3] as usize],
+        MUL_13[$state[ 0] as usize] ^ MUL_9[$state[ 1] as usize] ^ MUL_14[$state[ 2] as usize] ^ MUL_11[$state[ 3] as usize],
+        MUL_11[$state[ 0] as usize] ^ MUL_13[$state[ 1] as usize] ^ MUL_9[$state[ 2] as usize] ^ MUL_14[$state[ 3] as usize],
 
-    *state = [
-        MUL_14[state[ 0] as usize] ^ MUL_11[state[ 1] as usize] ^ MUL_13[state[ 2] as usize] ^ MUL_9[state[ 3] as usize],
-        MUL_9[state[ 0] as usize] ^ MUL_14[state[ 1] as usize] ^ MUL_11[state[ 2] as usize] ^ MUL_13[state[ 3] as usize],
-        MUL_13[state[ 0] as usize] ^ MUL_9[state[ 1] as usize] ^ MUL_14[state[ 2] as usize] ^ MUL_11[state[ 3] as usize],
-        MUL_11[state[ 0] as usize] ^ MUL_13[state[ 1] as usize] ^ MUL_9[state[ 2] as usize] ^ MUL_14[state[ 3] as usize],
+        MUL_14[$state[ 4] as usize] ^ MUL_11[$state[ 5] as usize] ^ MUL_13[$state[ 6] as usize] ^ MUL_9[$state[ 7] as usize],
+        MUL_9[$state[ 4] as usize] ^ MUL_14[$state[ 5] as usize] ^ MUL_11[$state[ 6] as usize] ^ MUL_13[$state[ 7] as usize],
+        MUL_13[$state[ 4] as usize] ^ MUL_9[$state[ 5] as usize] ^ MUL_14[$state[ 6] as usize] ^ MUL_11[$state[ 7] as usize],
+        MUL_11[$state[ 4] as usize] ^ MUL_13[$state[ 5] as usize] ^ MUL_9[$state[ 6] as usize] ^ MUL_14[$state[ 7] as usize],
 
-        MUL_14[state[ 4] as usize] ^ MUL_11[state[ 5] as usize] ^ MUL_13[state[ 6] as usize] ^ MUL_9[state[ 7] as usize],
-        MUL_9[state[ 4] as usize] ^ MUL_14[state[ 5] as usize] ^ MUL_11[state[ 6] as usize] ^ MUL_13[state[ 7] as usize],
-        MUL_13[state[ 4] as usize] ^ MUL_9[state[ 5] as usize] ^ MUL_14[state[ 6] as usize] ^ MUL_11[state[ 7] as usize],
-        MUL_11[state[ 4] as usize] ^ MUL_13[state[ 5] as usize] ^ MUL_9[state[ 6] as usize] ^ MUL_14[state[ 7] as usize],
+        MUL_14[$state[ 8] as usize] ^ MUL_11[$state[ 9] as usize] ^ MUL_13[$state[10] as usize] ^ MUL_9[$state[11] as usize],
+        MUL_9[$state[ 8] as usize] ^ MUL_14[$state[ 9] as usize] ^ MUL_11[$state[10] as usize] ^ MUL_13[$state[11] as usize],
+        MUL_13[$state[ 8] as usize] ^ MUL_9[$state[ 9] as usize] ^ MUL_14[$state[10] as usize] ^ MUL_11[$state[11] as usize],
+        MUL_11[$state[ 8] as usize] ^ MUL_13[$state[ 9] as usize] ^ MUL_9[$state[10] as usize] ^ MUL_14[$state[11] as usize],
 
-        MUL_14[state[ 8] as usize] ^ MUL_11[state[ 9] as usize] ^ MUL_13[state[10] as usize] ^ MUL_9[state[11] as usize],
-        MUL_9[state[ 8] as usize] ^ MUL_14[state[ 9] as usize] ^ MUL_11[state[10] as usize] ^ MUL_13[state[11] as usize],
-        MUL_13[state[ 8] as usize] ^ MUL_9[state[ 9] as usize] ^ MUL_14[state[10] as usize] ^ MUL_11[state[11] as usize],
-        MUL_11[state[ 8] as usize] ^ MUL_13[state[ 9] as usize] ^ MUL_9[state[10] as usize] ^ MUL_14[state[11] as usize],
-
-        MUL_14[state[12] as usize] ^ MUL_11[state[13] as usize] ^ MUL_13[state[14] as usize] ^ MUL_9[state[15] as usize],
-        MUL_9[state[12] as usize] ^ MUL_14[state[13] as usize] ^ MUL_11[state[14] as usize] ^ MUL_13[state[15] as usize],
-        MUL_13[state[12] as usize] ^ MUL_9[state[13] as usize] ^ MUL_14[state[14] as usize] ^ MUL_11[state[15] as usize],
-        MUL_11[state[12] as usize] ^ MUL_13[state[13] as usize] ^ MUL_9[state[14] as usize] ^ MUL_14[state[15] as usize]
+        MUL_14[$state[12] as usize] ^ MUL_11[$state[13] as usize] ^ MUL_13[$state[14] as usize] ^ MUL_9[$state[15] as usize],
+        MUL_9[$state[12] as usize] ^ MUL_14[$state[13] as usize] ^ MUL_11[$state[14] as usize] ^ MUL_13[$state[15] as usize],
+        MUL_13[$state[12] as usize] ^ MUL_9[$state[13] as usize] ^ MUL_14[$state[14] as usize] ^ MUL_11[$state[15] as usize],
+        MUL_11[$state[12] as usize] ^ MUL_13[$state[13] as usize] ^ MUL_9[$state[14] as usize] ^ MUL_14[$state[15] as usize]
     ];
-}
+};}
 
 #[inline]
 pub fn encrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
-    add_round_key(state, &expanded_key[..16]);
+    add_round_key!(state, &expanded_key[..16]);
 
     for i in (16..160).step_by(16) {     // 9 * 16 =  144, + 16 since first block is key
-        sub_bytes(state);
-        shift_rows(state);
-        mix_columns(state);
-        add_round_key(state, &expanded_key[i..i+16]);
+        sub_bytes!(state);
+        shift_rows!(state);
+        mix_columns!(state);
+        add_round_key!(state, &expanded_key[i..i+16]);
     }
 
-    sub_bytes(state);
-    shift_rows(state);
-    add_round_key(state, &expanded_key[160..]);
+    sub_bytes!(state);
+    shift_rows!(state);
+    add_round_key!(state, &expanded_key[160..]);
 }
 
 #[inline]
 pub fn decrypt(state: &mut [u8; 16], expanded_key: &[u8; 176]) {
-    add_round_key(state, &expanded_key[160..]);
-    inv_shift_rows(state);
-    inv_sub_bytes(state);
+    add_round_key!(state, &expanded_key[160..]);
+    inv_shift_rows!(state);
+    inv_sub_bytes!(state);
 
     for i in (16..145).rev().step_by(16) {  // 145 downwards
-        add_round_key(state, &expanded_key[i..i+16]);
-        inv_mix_columns(state);
-        inv_shift_rows(state);
-        inv_sub_bytes(state);
+        add_round_key!(state, &expanded_key[i..i+16]);
+        inv_mix_columns!(state);
+        inv_shift_rows!(state);
+        inv_sub_bytes!(state);
     }
 
-    add_round_key(state, &expanded_key[..16]);
+    add_round_key!(state, &expanded_key[..16]);
 }
 
 
