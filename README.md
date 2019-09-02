@@ -15,7 +15,7 @@ Then in `./target/release/` you will find the executable `aese`. Move this to `P
 ## Usage:
 
 ```bash
-aese [encrypt/decrypt] <path> -o <output path> -k "key"
+aese [encrypt/decrypt] <path> -o <output path> -k <key>
 ```
 
 View `--help` for more information.
