@@ -2,10 +2,7 @@ use crate::aes::lookup_tables::{SBOX, R_CON};
 
 pub fn expand_key(input_key: &[u8; 16]) -> [u8; 176] {
     let mut expanded = [0u8; 176];
-
-    for i in 0..16 {
-        expanded[i] = input_key[i];
-    }
+    expanded[..16].clone_from_slice(&input_key[..]);
 
     let mut bytes_generated: usize = 16;
     let mut rcon_iter: u8 = 1;
@@ -30,8 +27,8 @@ pub fn expand_key(input_key: &[u8; 16]) -> [u8; 176] {
             rcon_iter += 1;
         }
 
-        for i in 0..4 {
-            expanded[bytes_generated] = expanded[bytes_generated-16] ^ temp[i];
+        for num in temp.iter() {
+            expanded[bytes_generated] = expanded[bytes_generated-16] ^ num;
             bytes_generated += 1;
         }
     }

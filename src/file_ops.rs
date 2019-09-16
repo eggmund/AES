@@ -124,9 +124,9 @@ pub fn encrypt_file<P: AsRef<Path>>(read_from: P, write_to: P, key: &[u8; 16]) -
     let expanded_key = key_expansion::expand_key(key);
 
     // Write encrypted key to start so key can be validated when decrypting.
-    let mut key_enc = key.clone();
+    let mut key_enc = *key;     // 'Copy'able
     aes::encrypt(&mut key_enc, &expanded_key);
-    bufs_and_size.write_buf.write(&key_enc)?;
+    bufs_and_size.write_buf.write_all(&key_enc)?;
 
     let mut bytes_done: usize = 0;
     let mut state = [0u8; 16];
@@ -135,7 +135,7 @@ pub fn encrypt_file<P: AsRef<Path>>(read_from: P, write_to: P, key: &[u8; 16]) -
 
 
     while bytes_done < bufs_and_size.file_size {
-        bufs_and_size.read_buf.read(&mut state)?;
+        bufs_and_size.read_buf.read_exact(&mut state)?;
 
         if padding_amount != 0 && bufs_and_size.file_size - bytes_done <= 16 {
             for i in 0..padding_amount {
@@ -145,7 +145,7 @@ pub fn encrypt_file<P: AsRef<Path>>(read_from: P, write_to: P, key: &[u8; 16]) -
 
         aes::encrypt(&mut state, &expanded_key);
 
-        bufs_and_size.write_buf.write(&state)?;
+        bufs_and_size.write_buf.write_all(&state)?;
         bytes_done += 16;
     }
 
@@ -162,7 +162,7 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> io::Re
     let mut state = [0u8; 16];
 
     // Check key at start of file
-    bufs_and_size.read_buf.read(&mut state)?;
+    bufs_and_size.read_buf.read_exact(&mut state)?;
     aes::decrypt(&mut state, &expanded_key);
 
     if state != *key {
@@ -172,26 +172,24 @@ pub fn decrypt_file(read_from: &Path, write_to: &Path, key: &[u8; 16]) -> io::Re
     let mut bytes_done: usize = 16; // Key already checked
 
     while bytes_done < bufs_and_size.file_size - 16 {
-        bufs_and_size.read_buf.read(&mut state)?;
+        bufs_and_size.read_buf.read_exact(&mut state)?;
         aes::decrypt(&mut state, &expanded_key);
-        bufs_and_size.write_buf.write(&state)?;
+        bufs_and_size.write_buf.write_all(&state)?;
         bytes_done += 16;
     }
 
     // Last block may have padding
-    bufs_and_size.read_buf.read(&mut state)?;
+    bufs_and_size.read_buf.read_exact(&mut state)?;
     aes::decrypt(&mut state, &expanded_key);
 
     // Check for padding by checking for consecutive of the same end value
     let end_val = state[15] as usize;
     let mut end_chunk = state.to_vec();
-    if end_val <= 16 && end_val > 0 {
-        if end_chunk[(16-end_val)..16].to_vec() == vec![end_val as u8; end_val] {
-            end_chunk.truncate(16-end_val);
-        }
+    if end_val <= 16 && end_val > 0 && end_chunk[(16-end_val)..16].to_vec() == vec![end_val as u8; end_val] {
+        end_chunk.truncate(16-end_val);
     }
 
-    bufs_and_size.write_buf.write(end_chunk.as_slice())?;
+    bufs_and_size.write_buf.write_all(end_chunk.as_slice())?;
     bufs_and_size.write_buf.flush()?;   // Write remaining stuff
 
     Ok(())
